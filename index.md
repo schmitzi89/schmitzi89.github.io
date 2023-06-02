@@ -1,15 +1,14 @@
-# This is a first-level header
+# Overview
 
-This is some sample text. You can write about yourself here.
+I work as a data scientist in the steel industry. My hobbies are rowing, reading, machine learning, programming with R.
+I just created this page and hope to bring content soon
 
-## This is a second-level header
+## Topic 1
 
-Here is some more text. Maybe you can write about your interests or hobbies.
+Description of topic 1
 
 ### Here's a list of my favorite things:
 
 - Item 1
 - Item 2
 - Item 3
-
-Here's a [link](https://www.github/schmitzi89.com) to my GitHub profile.
