@@ -1,0 +1,48 @@
+---
+layout: post
+title:  "Reflections on health and hashimoto thyreoditis"
+---
+
+I take thyroid medication (levothyroxine) since 2014 because in May 2014, a doctor diagnosed me with hypothyroidism. I went to see that doctor because I had serious sleeping problems. I couldnt sleep for three weeks straight and felt like a zombie. After the third week, I went to that doctor and he measured a TSH of around 7, which is over the threshold of 4 which leads to the suggestion to take thyroid medication. Still, my T3 and T4 levels were in normal boundaries. My doctor suggested that if I get my TSH to normal levels again, my sleep would improve, too. Until today, this statement is very controversial for me. Hypothyroidism usually leads to tiredness and tiredness leads to people sleeping more and not less.
+Maybe my sleeping problems were not linked to my thyroid hormone levels at all but I dont know why my TSH was at 7. My antibodies were normal.
+
+This hypothyroidism bothered me and still bothers me regulary. Why did I develop this hypothyroidism? Was it just a random fluctuation which I took too seriously? What can I do to improve my thyroid function naturally? And even more importantly: Which effect does hypothyroidism have on me and how can I reduce those effects if they exist?
+
+I regularly experience one or several of the following symptoms:
+
+- Sleep problems
+- Nervousness
+- Anxiety disorders
+- Tiredness
+- Problems with concentration
+
+I often think to myself: It is not normal that I feel like that. Other people do better than me. It must be because of my thyroid problems! Also, because other people in the internet report a link between those symptoms and thyroid issues.
+
+But I am not sure. Sometimes I feel these symptoms and sometimes not. Sometimes I feel tired but I feel like it is normal tiredness. But sometimes I feel like it is not normal. Like there is something wromg with me. In those cases, I feel disconnected to myself and I am not happy with myself and how things are going.
+
+Maybe all those situations in which I am unhappy about my capabilities are situations where I want too much. Maybe I should lower my expectations. Maybe I should be more understanding towards myself. Maybe I should be more aware of my limitations and act accordingly.
+Furthermore, my T3 and T4 levels were never really outside the boundaries. It was just my TSH that was either too high or too low due to too high levothyroxine medication.
+
+- But why do I feel so tired every morning?
+- Why can I not drink more than 2 glasses of wine without having a big hangover the next day (huge headaches and throwing up) ?
+- Why am I always waking up around 4:00 in the night, nervous and not able to sleep?
+- Why am I even more tired the next day after a moderate rowing training?
+
+I had the feeling the symptoms mentioned above got better since I started my 4 days work week in April due to reduced stress and maybe that leads to my body managing my thyroid better too?
+My take until then was that my thyroid medication is not the cause of the symptoms mentioned above but it was more my stress management, job and general life situation. That I worry too much about my thyroid. But my worries were still always there and they came back when my mum told me that I should go check my thyroid hormone levels again because I was regularly taking a nap at my parents couch on weekends after lunch and my mum thought it is not normal to be so tired. But my mum has always a hard time relaxing. She is often working and doing something. She sleeps bad as well and even watches videos on her tablet in the night to relax. I think she didnt understand how I could be so relaxed to just take a nap in the afternoon on the couch.
+
+Surprisingly, my thyroid hormone levels became better since 2014. In 2014, I quickly went to take up to 125 mg of levothyroxine. But gradually, I could reduce it because my TSH levels became lower and lower. During the past year (2022) and until the beginning of May 2023, I took 50 mg of levothyroxine each morning. I went to see my doctor for a routine check. He reported TSH of 0.28 and a bit higher T3 and T4 levels than usual. So my doctor recommended me over the phone to reduce levothyroxine to 25 mg which I started to take in beginning of May.
+
+I felt very optimistic then. I was optimistic that my body somehow found its balance again and that my thyroid can fully recover. It would be a dream for me to not be dependent on any artificial hormones.
+
+After the news from my doctor and I reduced the levothyroxine to 25 mg, the symptoms mentioned above further improved. I felt more energized, had better results on the rowing machine, I could concentrate better at work and make good progress with my work-related problems. I presented my work-related research project on a conference which gave me a boost in confidence and I wasn`t so nervous any more. For a few days, I felt really good. During those days, I could confidently enjoy spending my time. I was happy and confident and  other people told me as well that they noticed it. I enjoyed talking to girls which are interesting to me and I was looking forward for what will come next.
+
+But it seems, the universe did not want to let me go my way so easily. On the 9th of June, I saw my doctor in person again because I was out of thyroid pills and needed a recipe. We spoke about my thyroid hormone levels and he asked if I want to do a routine radiospectropy of the tyroid just to check it, which I agreed to do. Little did I exepect the serious bummer that I would get.
+On the image, it was clearly visible that my thyroid looks like a sponge. He showed me his own healthy thyroid after, which looked very different. It became obvious to me that there is something not right with my thyroid.
+
+What was even weirder to me was that (as far as I remembered), my thyroid looked better on the last radiospectropy that my doctor did three years ago. I started to get a bit worried and I let him do another blood analysis.
+
+The results followed few days later (12th of June). My TSH was now at 14.6 and my antibodies were way too high (10 times over the upper threshold). It was a clear diagnosis of hashimoto thyreoditis. I felt depressed. It seems that the previously high thyroid levels were just a result of the autoimmune reaction which was and is still destroying my thyroid, leading to a higher release of thyroid hormones. This can temporarily improve thyroid hormone levels until the thyroid is burned out. It seems that I was now entering a state of thyroid burnout.
+
+Still the huge difference in TSH between relatively few weeks still makes me think whats going on.
+I did sports and drank few beers on the evening of the 8th of June. Maybe that led to really bad thyroid hormone level measurements the next morning? But from the radiospectrophy and antibody levels it seems obvious that there is an autoimmune reaction ongoing. But what increases it, what causes it? It is a big mystery to me since I think I have a healthy lifestyle. Maybe I should question my lifestlye too?
