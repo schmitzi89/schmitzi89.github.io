@@ -1,7 +1,7 @@
 title: Home
 email: alex.schmitz1608@gmail.com
 description: >- # this means to ignore newlines until "baseurl:"
-  Its never too late to learn something new.
+  Alexander Schmitz personal blog
 baseurl: "" # the subpath of your site, e.g. /blog
 url: "https://schmitzi89.github.io" # the base hostname & protocol for your site, e.g. http://example.com
 github_username:  schmitzi89
