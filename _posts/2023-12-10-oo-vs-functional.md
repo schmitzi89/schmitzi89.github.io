@@ -3,6 +3,8 @@ layout: post
 title:  "Deep Learning: Why object oriented?"
 ---
 
+This article is still work in progress
+
 ## Introduction
 
 Why are deep learning frameworks implemented with object-oriented programming? It is a question that programmers probably don`t ask themselves but I have a maths and R background where people typically use functional programming. I asked myself this question when I looked at the way layers and models are implemented in Keras.
@@ -334,3 +336,8 @@ work in progress
 ## Which implementation is better?
 
 work in progress
+
+## Further stuff to do
+ 
+- take batch generation logic outside of the epoch code
+- Understand the issue why assigning tf$variables inside a function still changes value outside
