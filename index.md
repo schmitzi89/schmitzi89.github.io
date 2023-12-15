@@ -1,14 +1,6 @@
-# About me
-
-Hi! Wilkommen auf meiner Website!
-
 Hi! Welcome to my website!
 
-I am german but decided to write everthing here in english. My interests cover different topics where the online community consists mainly of english speaking people and thats why I prefer to write in english. I hope that people with similar interests reach out to me.
+In this website I write about different things that interest me and free-time projects. My hobbies are rowing, reading, machine learning, programming with R, meeting with friends.
 
-I work as a data scientist in the steel industry. My hobbies are rowing, reading, machine learning, programming with R, meeting with friends.
-
-This is me:
-
-![Alt text](me_athome.jpg)
-
+I like to learn new stuff so I created this website to exchange with others who have similar interests.
+If you find something I wrote here interesting or have a remark, I`d be happy if you reach out to me.
