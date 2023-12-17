@@ -288,14 +288,46 @@ for(batch_counter in seq_len(num_batches)){
 
 | Aspect | Conclusion | Winner | 
 |----------|----------|----------|
-| Implementation | Object-oriented is more verbose. Object properties and methods need to be defined. More logic inside function. | Functional (clearly) |
-| Function call | OO batch generator needs to be instantiated. In the functional implementation, the number of batches needs to be calculated and the batch counter needs to be passed. | OO (slightly) |
+| Function code | Object-oriented style is more verbose. Object properties need to be defined inside the function. | Functional (clearly) |
+| Function call | The OO batch generator needs to be instantiated. In the functional implementation, the number of batches need to be calculated and the batch counter needs to be passed. | OO (slightly) |
 | Flexibility | In the OO implementation it is more difficult if we want to get a specific batch, say the fourth batch, we would need to do: <pre>batch_generator <- new_batch_generator(images, labels)<br>batch_generator$index <- batch_size*3 +1 # we need to set the index manually to the end of the third batch<br>batch_generator$get_next_batch()</pre> In the functional implementation it can be done like this: <pre>new_batch_generator(images, labels, batch_counter = 4)</pre> | Functional (clearly) |
 | Information | In the OO implementation, we can quickly extract meta data regarding the batch generator from the batch generator object: batch size, index, total number of batches. In the functional implementation this info is available in the current environment. | Tie |
 
 #### Conclusion
 
 For the generator function, my winner is the functional implementation. Having to manage the batch count outside of the generator and having to pass it to the function in the functional implementation is a small disadvantage which comes with greater benefits like the much clearer implementation and greater flexibility.
+However, the user needs to know how to embed the function into a higher-level code. With the OO implementation he does not need to worry how the number of batches should be calculated since the object will take care of it itself. That aspect makes the object-oriented implementation more encapsulated. Bugs might easier happen with the functional implementation, when users do not correctly feed the required batch counter.
+In the case of the generator function it is a minor issue since the logic is so easy but lets see how things turn out for the other functions of the OO-implementation.
+
+### Dense layer naive
+
+#### The OO-Implementation
+
+```R
+layer_naive_dense <- function(input_size, output_size, activation) {
+  self <- new.env(parent = emptyenv())
+  attr(self, "class") <- "NaiveDense"
+
+  self$activation <- activation
+
+  w_shape <- c(input_size, output_size)
+  w_initial_value <- random_array(w_shape, min = 0, max = 1e-1)
+  self$W <- tf$Variable(w_initial_value)
+
+  b_shape <- c(output_size)
+  b_initial_value <- array(0, b_shape)
+  self$b <- tf$Variable(b_initial_value)
+
+  self$weights <- list(self$W, self$b)
+
+  self$call <- function(inputs) {
+    self$activation(tf$matmul(inputs, self$W) + self$b)
+  }
+  self
+}
+```
+
+to be continued
 
 ## Further stuff to do
 
@@ -382,14 +414,11 @@ update_weights <- function(gradients, weights) {
 fit_model <- function(images, labels, epochs, batch_size = 128, layer_params, test_images, test_labels) {
   for (epoch_counter in seq_len(epochs)) {
     cat("Epoch ", epoch_counter, "\n")
-
     num_batches <- ceiling(nrow(images) / batch_size)
-
     for(batch_counter in seq_len(num_batches)){
       batch <- new_batch_generator(images, labels, batch_counter)
       layer_params <- one_training_step(model, batch$images, batch$labels, layer_params)
     }
-
     predictions <- naive_model_sequential(test_images, layer_params)
     predicted_labels <- max.col(predictions) - 1
     matches <- predicted_labels == as.array(test_labels)
