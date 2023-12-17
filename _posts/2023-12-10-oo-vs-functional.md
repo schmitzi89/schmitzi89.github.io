@@ -42,9 +42,9 @@ Here, we are creating a function `layer_naive_dense` that creates an object of t
 - weights: A list that contains both weights and biases.
 - activation: The activation function to be used in the layer.
 
-Furthermore, it has a method `call` which will do the matrix multiplications and return the transformed input.
+Furthermore, it has a method `call` which will do the matrix multiplications and return the transformed input. The most important aspect to notice is that an object contains a local environment which means that methods and properties live in the environment of the object.
 
-But why don´t we just implement it as a simple function? Because thats what a dense layer in a neural network actually is, when you look at it from a mathematical perspective. The following would be a simple `layer_naive_dense` function:
+But why don´t we just implement it as a simple function without local environments? Because from a mathematical perspective, a dense layer is just a simple function. We can manage everything that is important for the function outside of the function and pass it as a variables . The following would be a simple `layer_naive_dense` function which does just that:
 
 ```R
 layer_naive_dense <- function(inputs, W, b, activation) {
@@ -52,9 +52,9 @@ layer_naive_dense <- function(inputs, W, b, activation) {
 }
 ```
 
-Wow, so much more clear! The main difference is that we now pass the weights to the function as well. That means the weights need to be initialized outside of the dense layer. Would that make the code easier or more difficult?
+Wow, so much more clear! The main difference is that we now pass the weights to the function as well. That means the weights need to be initialized outside of the dense layer. Would that make the code easier or more difficult overall?
 
-Deep Learning models are just simple functions - chained. Everything needs to be differentiable to make backpropagation work. The essential machine-learning steps are simple functions appied one after the other. Would it help us, if we implement deep-learning in functional programming style? Would it make the code more explicit and easy to understand? Lets try it out and write an end-to-end deep learning implementation to train a model that classifies MNIST (handwritten number classification) ! We will try to keep everything low-level to maximize our understanding of the code.
+Deep Learning models are just simple functions - chained. Everything needs to be differentiable to make backpropagation work. The essential machine-learning steps are simple functions appied one after the other. Would it help us, if we implement deep-learning in functional programming style? Would it make the code more explicit and easy to understand? Lets try it out and write an end-to-end deep learning implementation to train a model that classifies MNIST (handwritten number classification) ! I will try to keep everything low-level so we can really compare piece by piece.
 
 ## The object oriented implementation
 
@@ -137,7 +137,7 @@ new_batch_generator <- function(images, labels, batch_size = 128) {
   self
 }
 
-one_training_step <- function(model, images_batch, labels_batch) {
+one_epoch <- function(model, images_batch, labels_batch) {
   with(tf$GradientTape() %as% tape, {
     predictions <- model$call(images_batch)
     per_sample_losses <-
@@ -229,11 +229,48 @@ initialize_layers <- function(layer_config, min = 0, max = 0.1){
     b_initial_value <- array(0, b_shape)
 
     layers_params[[i]] <- list(
-      W = tf$Variable(w_initial_value), 
-      b = tf$Variable(b_initial_value), 
+      W = tf$Variable(w_initial_value),
+      b = tf$Variable(b_initial_value),
       activation = layer_config[[i]]$activation)
   }
   return(layers_params)
+}
+
+naive_model_sequential <- function(inputs, layer_params){
+  x <- inputs
+  for (layer in layer_params){
+    x <- layer_naive_dense(inputs = x, W = layer$W, b =  layer$b, activation = layer$activation)
+  }
+  return(x)
+}
+
+new_batch_generator <- function(images, labels, batch_size = 128, batch_id = 1) {
+  start <- batch_size * (batch_id -1) + 1
+  end <- batch_size * batch_id
+  if(end >= nrow(images)) {
+    end <- nrow(images)
+  }
+  indices <- start:end
+  return(list(images = images[indices, ], labels = labels[indices]))
+}
+
+one_training_step <- function(model, images_batch, labels_batch, layer_params) {
+  with(tf$GradientTape() %as% tape, {
+    predictions <- naive_model_sequential(inputs = images_batch, layer_params = layer_params)
+    per_sample_loss <- loss_sparse_categorical_crossentropy(y_true = labels_batch, y_pred = predictions)
+    average_loss <- mean(per_sample_loss)
+  })
+  weights <- lapply(layer_params, function(layer_params) list(layer_params$W, layer_params$b))
+  weights <- do.call(c, weights)
+
+  gradients <- tape$gradient(average_loss, weights)
+  weights <- update_weights(gradients, weights)
+  j <- 1
+  for(i in seq(from = 1, to = length(layer_params)*2 -1, by = 2)){
+    layer_params[[(i +1) / 2]]$W <- weights[[i]]
+    layer_params[[(i +1) / 2]]$b <- weights[[i + 1]]
+  }
+  return(layer_params)
 }
 
 update_weights <- function(gradients, weights) {
@@ -243,61 +280,26 @@ update_weights <- function(gradients, weights) {
   return(weights)
 }
 
-model <- function(inputs, layer_params){
-  x <- inputs
-  for (layer in layer_params){
-    x <- layer_naive_dense(inputs = x, W = layer$W, b =  layer$b, activation = layer$activation)
-  }
-  return(x)
-}
-
-one_epoch <- function(images, labels, batch_size, layer_params) {
-
-  num_batches <- ceiling(nrow(images) / batch_size)
-  start <- 1
-
-  for(i in 1:num_batches){
-    end <- start + batch_size - 1
-    if(end >= nrow(images)) {
-      end <- nrow(images)
-      }
-    indices <- start:end
-    images_batch <-  images[indices, ]
-    labels_batch <- labels[indices]
-
-    with(tf$GradientTape() %as% tape, {
-      predictions <- model(inputs = images_batch, layer_params = layer_params)
-      per_sample_loss <- loss_sparse_categorical_crossentropy(labels_batch, predictions)
-      average_loss <- mean(per_sample_loss)
-    })
-    weights <- lapply(layer_params, function(layer_params) list(layer_params$W, layer_params$b))
-    weights <- do.call(c, weights)
-
-    gradients <- tape$gradient(average_loss, weights)
-    weights <- update_weights(gradients, weights)
-    j <- 1
-    for(i in seq(from = 1, to = length(layer_params)*2 -1, by = 2)){
-      layer_params[[(i +1) / 2]]$W <- weights[[i]]
-      layer_params[[(i +1) / 2]]$b <- weights[[i + 1]]
-    }
-    start <- end + 1
-  }
-  return(layer_params)
-}
-
-fit <- function(images, labels, epochs, batch_size = 128, layer_params) {
+fit_model <- function(images, labels, epochs, batch_size = 128, layer_params, test_images, test_labels) {
   for (epoch_counter in seq_len(epochs)) {
     cat("Epoch ", epoch_counter, "\n")
-    layer_params <- one_epoch(images, labels, batch_size, layer_params)
 
-    predictions <- model(test_images, layer_params)
+    num_batches <- ceiling(nrow(images) / batch_size)
+
+    for(batch_counter in seq_len(num_batches)){
+      batch <- new_batch_generator(images, labels, batch_counter)
+      layer_params <- one_training_step(model, batch$images, batch$labels, layer_params)
+    }
+
+    predictions <- naive_model_sequential(test_images, layer_params)
     predicted_labels <- max.col(predictions) - 1
     matches <- predicted_labels == as.array(test_labels)
     cat(sprintf("accuracy: %.2f\n", mean(matches)))
   }
-  return(weights)
+  return(layer_params)
 }
 ```
+
 After we load the functions above we can generate predictions with:
 
 ```R
@@ -314,7 +316,7 @@ layer_params_initial <- initialize_layers(
   )
 )
 
-layer_params_learned <- fit(train_images, train_labels, epochs = 1, batch_size = 128, layer_params = layer_params_initial)
+layer_params_learned <- fit_model(train_images, train_labels, epochs = 1, batch_size = 128, layer_params = layer_params_initial)
 ```
 
 In order to evaluate the model we need to run:
@@ -328,16 +330,96 @@ cat(sprintf("accuracy: %.2f\n", mean(matches)))
 
 ## The differences between the implementations
 
-work in progress
+Now comes the important question: Which implementation is better?
+It`s a difficult question and in order to answer it, we need to look closely at few examples from the implementations above.
 
-- The use of local environments vs explicit passing of variables with functions
-- Initialization of weights outside of layers
+### Generator function
 
-## Which implementation is better?
+This is a very easy example which highlights the differences of object oriented implementations vs functional implementations.
 
-work in progress
+#### The OO-Implementation
+
+```R
+new_batch_generator <- function(images, labels, batch_size = 128) {
+  self <- new.env(parent = emptyenv())
+  attr(self, "class") <- "BatchGenerator"
+
+  stopifnot(nrow(images) == nrow(labels))
+  self$index <- 1
+  self$images <- images
+  self$labels <- labels
+  self$batch_size <- batch_size
+  self$num_batches <- ceiling(nrow(images) / batch_size)
+
+  self$get_next_batch <- function() {
+    start <- self$index
+    if(start > nrow(images))
+      return(NULL)
+
+    end <- start + self$batch_size - 1
+    if(end > nrow(images))
+      end <- nrow(images)
+
+    self$index <- end + 1
+    indices <- start:end
+    list(images = self$images[indices, ],
+         labels = self$labels[indices])
+  }
+  self
+}
+```
+
+Afterwards, we call the OO-function in this context:
+
+```R
+batch_generator <- new_batch_generator(images, labels)
+
+for (batch_counter in seq_len(batch_generator$num_batches)) {
+  batch <- batch_generator$get_next_batch()
+  ...
+}
+```
+
+#### The Functional implementation
+
+```R
+new_batch_generator <- function(images, labels, batch_size = 128, batch_counter = 1) {
+  start <- batch_size * (batch_id -1) + 1
+  end <- batch_size * batch_id
+  if(end >= nrow(images)) {
+    end <- nrow(images)
+  }
+  indices <- start:end
+  return(list(images = images[indices, ], labels = labels[indices]))
+}
+```
+
+Afterwards, we call the function in this context:
+
+```R
+num_batches <- ceiling(nrow(images) / batch_size)
+
+for(batch_counter in seq_len(num_batches)){
+  batch <- new_batch_generator(images, labels, batch_counter)
+  ...
+}
+```
+
+#### Differences
+
+| Aspect | Conclusion | Winner | 
+|----------|----------|----------|
+| Implementation | Object-oriented is more verbose. Object properties and methods need to be defined. More logic inside function. | Functional (clearly) |
+| Function call | OO batch generator needs to be instantiated. In the functional implementation, the number of batches needs to be calculated and the batch counter needs to be passed. | OO (slightly) |
+| Flexibility | In the OO implementation it is more difficult if we want to get a specific batch, say the fourth batch, we would need to do: <pre>batch_generator <- new_batch_generator(images, labels)<br>batch_generator$index <- batch_size*3 +1 # we need to set the index manually to the end of the third batch<br>batch_generator$get_next_batch()</pre> In the functional implementation it can be done like this: <pre>new_batch_generator(images, labels, batch_counter = 4)</pre> | Functional (clearly) |
+| Information | In the OO implementation, we can quickly extract meta data regarding the batch generator from the batch generator object: batch size, index, total number of batches. In the functional implementation this info is available in the current environment. | Tie |
+
+#### Conclusion
+
+For the generator function, my winner is the functional implementation. Having to manage the batch count outside of the generator and having to pass it to the function in the functional implementation is a small disadvantage which comes with greater benefits like the much clearer implementation and greater flexibility.
 
 ## Further stuff to do
- 
-- take batch generation logic outside of the epoch code
+
 - Understand the issue why assigning tf$variables inside a function still changes value outside
+- compare dense_layer_naive
+- compare management of weights outside of layer
