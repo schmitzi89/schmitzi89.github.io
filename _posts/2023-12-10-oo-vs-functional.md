@@ -204,7 +204,106 @@ Easy to use, right?
 
 How would that look like if we implement it via functional programming?
 
-## The functional implementation
+## Step by step guide to the functional implementation
+
+In order to build the functional implementation step by step, lets look at the individual parts of the object-oriented implementation from above and try to implement everything using functional programming paradigms:
+
+- We wont use local environments
+- We want to explicitly pass all required parameters to the function
+- The functions should explicitly return whats needed
+
+### Generator function
+
+We start with the generator function since this is a very easy example. I will write down the implementation and discuss the differences of the functional implementation vs the object oriented implementation.
+
+#### The OO-Implementation
+
+```R
+new_batch_generator <- function(images, labels, batch_size = 128) {
+  self <- new.env(parent = emptyenv())
+  attr(self, "class") <- "BatchGenerator"
+
+  stopifnot(nrow(images) == nrow(labels))
+  self$index <- 1
+  self$images <- images
+  self$labels <- labels
+  self$batch_size <- batch_size
+  self$num_batches <- ceiling(nrow(images) / batch_size)
+
+  self$get_next_batch <- function() {
+    start <- self$index
+    if(start > nrow(images))
+      return(NULL)
+
+    end <- start + self$batch_size - 1
+    if(end > nrow(images))
+      end <- nrow(images)
+
+    self$index <- end + 1
+    indices <- start:end
+    list(images = self$images[indices, ],
+         labels = self$labels[indices])
+  }
+  self
+}
+```
+
+Afterwards, we call the OO-function like this:
+
+```R
+batch_generator <- new_batch_generator(images, labels)
+
+for (batch_counter in seq_len(batch_generator$num_batches)) {
+  batch <- batch_generator$get_next_batch()
+  ...
+}
+```
+
+#### The Functional implementation
+
+```R
+new_batch_generator <- function(images, labels, batch_size = 128, batch_counter) {
+  start <- batch_size * (batch_id -1) + 1
+  end <- batch_size * batch_id
+  if(end >= nrow(images)) {
+    end <- nrow(images)
+  }
+  indices <- start:end
+  return(list(images = images[indices, ], labels = labels[indices]))
+}
+```
+
+Afterwards, we call the function like this:
+
+```R
+num_batches <- ceiling(nrow(images) / batch_size)
+
+for(batch_counter in seq_len(num_batches)){
+  batch <- new_batch_generator(images, labels, batch_counter)
+  ...
+}
+```
+
+#### Differences
+
+| Aspect | Conclusion | Winner | 
+|----------|----------|----------|
+| Implementation | Object-oriented is more verbose. Object properties and methods need to be defined. More logic inside function. | Functional (clearly) |
+| Function call | OO batch generator needs to be instantiated. In the functional implementation, the number of batches needs to be calculated and the batch counter needs to be passed. | OO (slightly) |
+| Flexibility | In the OO implementation it is more difficult if we want to get a specific batch, say the fourth batch, we would need to do: <pre>batch_generator <- new_batch_generator(images, labels)<br>batch_generator$index <- batch_size*3 +1 # we need to set the index manually to the end of the third batch<br>batch_generator$get_next_batch()</pre> In the functional implementation it can be done like this: <pre>new_batch_generator(images, labels, batch_counter = 4)</pre> | Functional (clearly) |
+| Information | In the OO implementation, we can quickly extract meta data regarding the batch generator from the batch generator object: batch size, index, total number of batches. In the functional implementation this info is available in the current environment. | Tie |
+
+#### Conclusion
+
+For the generator function, my winner is the functional implementation. Having to manage the batch count outside of the generator and having to pass it to the function in the functional implementation is a small disadvantage which comes with greater benefits like the much clearer implementation and greater flexibility.
+
+## Further stuff to do
+
+- compare dense_layer_naive and model_naive_sequential
+- compare management of weights outside of layer
+- Understand the issue why assigning tf$variables inside a function still changes value outside
+
+## The complete functional implementation
 
 ```R
 library(keras)
@@ -327,99 +426,3 @@ predicted_labels <- max.col(predictions) - 1
 matches <- predicted_labels == as.array(test_labels)
 cat(sprintf("accuracy: %.2f\n", mean(matches)))
 ```
-
-## The differences between the implementations
-
-Now comes the important question: Which implementation is better?
-It`s a difficult question and in order to answer it, we need to look closely at few examples from the implementations above.
-
-### Generator function
-
-This is a very easy example which highlights the differences of object oriented implementations vs functional implementations.
-
-#### The OO-Implementation
-
-```R
-new_batch_generator <- function(images, labels, batch_size = 128) {
-  self <- new.env(parent = emptyenv())
-  attr(self, "class") <- "BatchGenerator"
-
-  stopifnot(nrow(images) == nrow(labels))
-  self$index <- 1
-  self$images <- images
-  self$labels <- labels
-  self$batch_size <- batch_size
-  self$num_batches <- ceiling(nrow(images) / batch_size)
-
-  self$get_next_batch <- function() {
-    start <- self$index
-    if(start > nrow(images))
-      return(NULL)
-
-    end <- start + self$batch_size - 1
-    if(end > nrow(images))
-      end <- nrow(images)
-
-    self$index <- end + 1
-    indices <- start:end
-    list(images = self$images[indices, ],
-         labels = self$labels[indices])
-  }
-  self
-}
-```
-
-Afterwards, we call the OO-function in this context:
-
-```R
-batch_generator <- new_batch_generator(images, labels)
-
-for (batch_counter in seq_len(batch_generator$num_batches)) {
-  batch <- batch_generator$get_next_batch()
-  ...
-}
-```
-
-#### The Functional implementation
-
-```R
-new_batch_generator <- function(images, labels, batch_size = 128, batch_counter = 1) {
-  start <- batch_size * (batch_id -1) + 1
-  end <- batch_size * batch_id
-  if(end >= nrow(images)) {
-    end <- nrow(images)
-  }
-  indices <- start:end
-  return(list(images = images[indices, ], labels = labels[indices]))
-}
-```
-
-Afterwards, we call the function in this context:
-
-```R
-num_batches <- ceiling(nrow(images) / batch_size)
-
-for(batch_counter in seq_len(num_batches)){
-  batch <- new_batch_generator(images, labels, batch_counter)
-  ...
-}
-```
-
-#### Differences
-
-| Aspect | Conclusion | Winner | 
-|----------|----------|----------|
-| Implementation | Object-oriented is more verbose. Object properties and methods need to be defined. More logic inside function. | Functional (clearly) |
-| Function call | OO batch generator needs to be instantiated. In the functional implementation, the number of batches needs to be calculated and the batch counter needs to be passed. | OO (slightly) |
-| Flexibility | In the OO implementation it is more difficult if we want to get a specific batch, say the fourth batch, we would need to do: <pre>batch_generator <- new_batch_generator(images, labels)<br>batch_generator$index <- batch_size*3 +1 # we need to set the index manually to the end of the third batch<br>batch_generator$get_next_batch()</pre> In the functional implementation it can be done like this: <pre>new_batch_generator(images, labels, batch_counter = 4)</pre> | Functional (clearly) |
-| Information | In the OO implementation, we can quickly extract meta data regarding the batch generator from the batch generator object: batch size, index, total number of batches. In the functional implementation this info is available in the current environment. | Tie |
-
-#### Conclusion
-
-For the generator function, my winner is the functional implementation. Having to manage the batch count outside of the generator and having to pass it to the function in the functional implementation is a small disadvantage which comes with greater benefits like the much clearer implementation and greater flexibility.
-
-## Further stuff to do
-
-- Understand the issue why assigning tf$variables inside a function still changes value outside
-- compare dense_layer_naive
-- compare management of weights outside of layer
