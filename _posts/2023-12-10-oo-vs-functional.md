@@ -3,7 +3,7 @@ layout: post
 title:  "Deep Learning: Why object oriented?"
 ---
 
-This article is still work in progress
+This article is work in progress
 
 ## Introduction
 
@@ -44,7 +44,7 @@ Here, we are creating a function `layer_naive_dense` that creates an object of t
 
 Furthermore, it has a method `call` which will do the matrix multiplications and return the transformed input. The most important aspect to notice is that an object contains a local environment which means that methods and properties live in the environment of the object.
 
-But why don´t we just implement it as a simple function without local environments? Because from a mathematical perspective, a dense layer is just a simple function. We can manage everything that is important for the function outside of the function and pass it as a variables . The following would be a simple `layer_naive_dense` function which does just that:
+But why don´t we just implement it as a simple function without local environments? Because from a mathematical perspective, a dense layer is just a simple function. We can manage everything that is important for the function outside of it and pass it as a variables . The following would be a simple `layer_naive_dense` function which does just that:
 
 ```R
 layer_naive_dense <- function(inputs, W, b, activation) {
@@ -52,7 +52,7 @@ layer_naive_dense <- function(inputs, W, b, activation) {
 }
 ```
 
-Wow, so much more clear! The main difference is that we now pass the weights to the function as well. That means the weights need to be initialized outside of the dense layer. Would that make the code easier or more difficult overall?
+We save a lot of code! But we would now have to manage the weights outside of the function. That means the weights need to be initialized outside of the dense layer and passed as variables to the function. Would that make the code easier or more difficult overall?
 
 Deep Learning models are just simple functions - chained. Everything needs to be differentiable to make backpropagation work. The essential machine-learning steps are simple functions appied one after the other. Would it help us, if we implement deep-learning in functional programming style? Would it make the code more explicit and easy to understand? Lets try it out and write an end-to-end deep learning implementation to train a model that classifies MNIST (handwritten number classification) ! I will try to keep everything low-level so we can really compare piece by piece.
 
@@ -188,7 +188,7 @@ model <- naive_model_sequential(list(
 fit_model(model, train_images, train_labels, epochs = 1, batch_size = 128, test_images, test_labels)
 ```
 
-After ~30 Epochs it reaches an accuracy of around 90% which sounds great but is actually really bad compared if we replace our simple weights update with a standard optimizer like rmsprop. That one would reach ~98% accuracy after 5 epochs.
+After ~30 Epochs it reaches an accuracy of around 90% which sounds great but is actually really bad because if we replace our simple weights update with a standard optimizer like rmsprop it would reach ~98% accuracy after 5 epochs.
 Anyway, this post is not about training the best model. It is about understanding the differences between object oriented and functional programming implementations.
 
 We can generate predictions with:
@@ -210,11 +210,11 @@ In order to build the functional implementation step by step, lets look at the i
 
 - We wont use local environments
 - We want to explicitly pass all required parameters to the function
-- The functions should explicitly return whats needed
+- The functions should return whats needed for all parts to work well together
 
 ### Generator function
 
-We start with the generator function since this is a very easy example. I will write down the implementation and discuss the differences of the functional implementation vs the object oriented implementation.
+I am starting with the generator function since this is a very easy example. I will write down the implementation and discuss the differences of the functional implementation vs the object oriented implementation.
 
 #### The OO-Implementation
 
@@ -288,10 +288,10 @@ for(batch_counter in seq_len(num_batches)){
 
 | Aspect | Conclusion | Winner | 
 |----------|----------|----------|
-| Function code | Object-oriented style is more verbose. Object properties need to be defined inside the function. | Functional (clearly) |
-| Function call | The OO batch generator needs to be instantiated. In the functional implementation, the number of batches need to be calculated and the batch counter needs to be passed. | OO (slightly) |
-| Flexibility | In the OO implementation it is more difficult if we want to get a specific batch, say the fourth batch, we would need to do: <pre>batch_generator <- new_batch_generator(images, labels)<br>batch_generator$index <- batch_size*3 +1 # we need to set the index manually to the end of the third batch<br>batch_generator$get_next_batch()</pre> In the functional implementation it can be done like this: <pre>new_batch_generator(images, labels, batch_counter = 4)</pre> | Functional (clearly) |
-| Information | In the OO implementation, we can quickly extract meta data regarding the batch generator from the batch generator object: batch size, index, total number of batches. In the functional implementation this info is available in the current environment. | Tie |
+| Clarity of code | Object-oriented style is more verbose. Object properties need to be defined inside the function. | Functional |
+| Ease of use | The OO batch generator is slightly easier to use. It just needs to be instantiated. In the functional implementation, the number of batches need to be calculated and the batch counter needs to be passed. | OO |
+| Flexibility | In the OO implementation it is more difficult if we want to get a specific batch, say the fourth batch, we would need to do: <pre>batch_generator <- new_batch_generator(images, labels)<br>batch_generator$index <- batch_size*3 +1 # we need to set the index manually to the end of the third batch<br>batch_generator$get_next_batch()</pre> In the functional implementation it can be done like this: <pre>new_batch_generator(images, labels, batch_counter = 4)</pre> Which is much more straightforward. | Functional |
+| Debugability | In the OO implementation, we can quickly extract meta data regarding the batch generator from the batch generator object: batch size, index, total number of batches. In the functional implementation this info is available in the current environment. | Tie |
 
 #### Conclusion
 
@@ -299,7 +299,8 @@ For the generator function, my winner is the functional implementation. Having t
 However, the user needs to know how to embed the function into a higher-level code. With the OO implementation he does not need to worry how the number of batches should be calculated since the object will take care of it itself. That aspect makes the object-oriented implementation more encapsulated. Bugs might easier happen with the functional implementation, when users do not correctly feed the required batch counter.
 In the case of the generator function it is a minor issue since the logic is so easy but lets see how things turn out for the other functions of the OO-implementation.
 
-### Dense layer naive
+### Model
+The model code consists of a _layer_naive_dense_ and a _naive_model_sequential_ function.
 
 #### The OO-Implementation
 
@@ -307,6 +308,10 @@ In the case of the generator function it is a minor issue since the logic is so 
 layer_naive_dense <- function(input_size, output_size, activation) {
   self <- new.env(parent = emptyenv())
   attr(self, "class") <- "NaiveDense"
+
+  random_array <- function(dim, min = 0, max = 1){
+  array(runif(prod(dim), min, max),dim)
+  }
 
   self$activation <- activation
 
@@ -325,17 +330,121 @@ layer_naive_dense <- function(input_size, output_size, activation) {
   }
   self
 }
+
+naive_model_sequential <- function(layers) {
+  self <- new.env(parent = emptyenv())
+  self$layers <- layers
+
+  weights <- lapply(layers, function(layer) layer$weights)
+  self$weights <- do.call(c, weights)
+
+  self$call <- function(inputs) {
+    x <- inputs
+    for (layer in self$layers)
+      x <- layer$call(x)
+    x
+  }
+  self
+}
 ```
 
-to be continued
+The user can afterwards initialize a model and generate predictions with the following code:
 
-## Further stuff to do
+```R
+model <- naive_model_sequential(
+  list(
+    layer_naive_dense(input_size = 28 * 28, output_size = 512, activation = tf$nn$relu),
+    layer_naive_dense(input_size = 512, output_size = 10, activation = tf$nn$softmax)
+))
 
-- compare dense_layer_naive and model_naive_sequential
+predictions <- model$call(images_batch)
+```
+
+This code enables the user to chain as many _naive_dense_layers_ after each other as he/she wants. The weights are stored in each layer and the layer structure is stored in the _naive_model_sequential_. If I want to avoid using local environments that means I need to manage the layer structure as well as the layer weights completely outside of this code. Lets go!
+
+#### Functional implementation
+
+```R
+layer_naive_dense <- function(inputs, W, b, activation) {
+  activation(tf$matmul(inputs, W) + b)
+}
+
+naive_model_sequential <- function(inputs, layer_params){
+  x <- inputs
+  for (layer in layer_params){
+    x <- layer_naive_dense(inputs = x, W = layer$W, b =  layer$b, activation = layer$activation)
+  }
+  return(x)
+}
+
+initialize_layers <- function(layer_config, min = 0, max = 0.1){
+  layers_params <- list()
+
+  random_array <- function(dim, min = 0, max = 1){
+    array(runif(prod(dim), min, max),dim)
+  }
+
+  for(i in 1:length(layer_config)){
+    w_shape <- c(layer_config[[i]]$input_size, layer_config[[i]]$output_size)
+    w_initial_value <- random_array(w_shape, min = min, max = max)
+
+    b_shape <- c(layer_config[[i]]$output_size)
+    b_initial_value <- array(0, b_shape)
+
+    layers_params[[i]] <- list(
+      W = tf$Variable(w_initial_value),
+      b = tf$Variable(b_initial_value),
+      activation = layer_config[[i]]$activation)
+  }
+  return(layers_params)
+}
+```
+
+The code for the _layer_naive_dense_ and the _naive_model_sequential_ is much shorter here than in the OO implementation. However this is not enough. In order to initialize the weights for an arbitrary amount of layers we need to add the _initialize_layers_ function. Having written the functions above, the user can now create the model with:
+
+```R
+layer_params <- initialize_layers(
+  list(
+    list(input_size = 28*28, output_size = 512, activation = tf$nn$relu),
+    list(input_size = 512, output_size = 10, activation = tf$nn$softmax)
+  )
+)
+
+predictions <- naive_model_sequential(inputs = images_batch, layer_params = layer_params)
+```
+
+#### Differences
+
+
+| Aspect | Conclusion | Winner | 
+|----------|----------|----------|
+| Clarity of code | Object-oriented style is slightly more verbose because of the flattening of weights that happens in the _naive_model_sequential_ function. Object properties need to be defined inside the function. Otherwise it is pretty similar | Tie |
+| Ease of use | Basically the same. The only difference is that in the functional implementation the user needs to pass the layer_params to the model. | Tie |
+| Flexibility | The functional implementation is more flexible because we can easily control how we want to initialize the weights. That is not possible in the object-oriented implementation. | Functional |
+| Debugability | In the OO implementation, we can quickly extract meta data regarding the model generator from the model object: layers and weights. In the functional implementation this info is available in the current environment. | Tie |
+
+#### Conclusion
+
+Again, the functional implementation is the winner. So functional over OO? Wait! Too early! We forgot the most important part: How easy is it to train each model?
+
+### Model training
+
+#### Object oriented implementation
+
+#### Functional implementation
+
+#### Differences
+
+- compare model training of both
 - compare management of weights outside of layer
-- Understand the issue why assigning tf$variables inside a function still changes value outside
+
+#### Conclusion
+
+- Write conclusion
 
 ## The complete functional implementation
+
+Having written down each part of the functional implementation above, here is again the full functional low-level implementation using naive dense layers and a naive sequential model:
 
 ```R
 library(keras)
@@ -455,3 +564,6 @@ predicted_labels <- max.col(predictions) - 1
 matches <- predicted_labels == as.array(test_labels)
 cat(sprintf("accuracy: %.2f\n", mean(matches)))
 ```
+## Further stuff to do
+
+- Understand the issue why assigning tf$variables inside a function still changes value outside
