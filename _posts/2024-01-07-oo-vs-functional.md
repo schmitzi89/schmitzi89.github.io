@@ -288,7 +288,7 @@ for(batch_counter in seq_len(num_batches)){
 |----------|----------|----------|
 | Clarity of code | Object-oriented style is more verbose. Object properties need to be defined inside the function. | Functional |
 | Ease of use | The OO batch generator is slightly easier to use. It just needs to be instantiated. In the functional implementation, the number of batches need to be calculated and the batch counter needs to be passed. | OO |
-| Flexibility | In the OO implementation it is more difficult if we want to get a specific batch, say the fourth batch, we would need to do: <pre>batch_generator <- new_batch_generator(images, labels)<br>batch_generator$index <- batch_size*3 +1 # we need to set the index manually to the end of the third batch<br>batch_generator$get_next_batch()</pre> In the functional implementation it can be done like this: <pre>new_batch_generator(images, labels, batch_counter = 4)</pre> Which is much more straightforward. | Functional |
+| Flexibility | In the OO implementation it is more difficult if we want to get a specific batch, say the fourth batch, we would need to do: `batch_generator <- new_batch_generator(images, labels); batch_generator$index <- batch_size*3 +1; batch_generator$get_next_batch()` In the functional implementation it can be done like this: `new_batch_generator(images, labels, batch_counter = 4)` Which is much more straightforward. | Functional |
 | Debugability | In the OO implementation, we can quickly extract meta data regarding the batch generator from the batch generator object: batch size, index, total number of batches. In the functional implementation this info is available in the current environment. | Tie |
 
 #### Conclusion
