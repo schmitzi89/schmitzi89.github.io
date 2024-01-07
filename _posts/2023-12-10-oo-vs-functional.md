@@ -415,7 +415,6 @@ predictions <- naive_model_sequential(inputs = images_batch, layer_params = laye
 
 #### Differences
 
-
 | Aspect | Conclusion | Winner | 
 |----------|----------|----------|
 | Clarity of code | Object-oriented style is slightly more verbose because of the flattening of weights that happens in the _naive_model_sequential_ function. Object properties need to be defined inside the function. Otherwise it is pretty similar | Tie |
@@ -429,18 +428,131 @@ Again, the functional implementation is the winner. So functional over OO? Wait!
 
 ### Model training
 
+The model training part is where the magic happens. Here, we calculate gradients and update the model weights based on gradient descent. This implementation uses the automatic differentiation capabilities of tensorflow`s _GradientTape_ to do that. Furthermore, we do everything in mini-batches and making sure that our training loop loops over the whole training dataset for one epoch.
+
 #### Object oriented implementation
+
+```R
+one_training_step <- function(model, images_batch, labels_batch) {
+  with(tf$GradientTape() %as% tape, {
+    predictions <- model$call(images_batch)
+    per_sample_losses <-
+      loss_sparse_categorical_crossentropy(labels_batch, predictions)
+    average_loss <- mean(per_sample_losses)
+  })
+  gradients <- tape$gradient(average_loss, model$weights)
+  update_weights(gradients, model$weights)
+  average_loss
+}
+
+update_weights <- function(gradients, weights) {
+  stopifnot(length(gradients) == length(weights))
+  for (i in seq_along(weights))
+    weights[[i]]$assign_sub(gradients[[i]] * 1e-3)
+}
+
+fit_model <- function(model, images, labels, epochs, batch_size = 128, test_images, test_labels) {
+  for (epoch_counter in seq_len(epochs)) {
+    cat("Epoch ", epoch_counter, "\n")
+    batch_generator <- new_batch_generator(images, labels)
+    for (batch_counter in seq_len(batch_generator$num_batches)) {
+      batch <- batch_generator$get_next_batch()
+      loss <- one_training_step(model, batch$images, batch$labels)
+    }
+    predictions <- model$call(test_images)
+    predicted_labels <- max.col(predictions) - 1
+    matches <- predicted_labels == test_labels
+    cat(sprintf("accuracy: %.2f\n", mean(matches)))
+  }
+}
+```
+
+Afterwards, the user can do the training and generate predictions like this:
+
+```R
+layer_params_learned <- fit_model(model, train_images, train_labels, epochs = 1, batch_size = 128)
+
+predictions <- model(test_images)
+predicted_labels <- max.col(predictions) - 1
+matches <- predicted_labels == as.array(test_labels)
+cat(sprintf("accuracy: %.2f\n", mean(matches)))
+```
 
 #### Functional implementation
 
+```R
+one_training_step <- function(model, images_batch, labels_batch, layer_params) {
+  with(tf$GradientTape() %as% tape, {
+    predictions <- naive_model_sequential(inputs = images_batch, layer_params = layer_params)
+    per_sample_loss <- loss_sparse_categorical_crossentropy(y_true = labels_batch, y_pred = predictions)
+    average_loss <- mean(per_sample_loss)
+  })
+  weights <- lapply(layer_params, function(layer_params) list(layer_params$W, layer_params$b))
+  weights <- do.call(c, weights)
+  gradients <- tape$gradient(average_loss, weights)
+  weights <- update_weights(gradients, weights)
+  j <- 1
+  for(i in seq(from = 1, to = length(layer_params)*2 -1, by = 2)){
+    layer_params[[(i +1) / 2]]$W <- weights[[i]]
+    layer_params[[(i +1) / 2]]$b <- weights[[i + 1]]
+  }
+  return(layer_params)
+}
+
+update_weights <- function(gradients, weights) {
+  stopifnot(length(gradients) == length(weights))
+  for (i in seq_along(weights))
+    weights[[i]]$assign_sub(gradients[[i]] * 1e-3)
+  return(weights)
+}
+
+fit_model <- function(model, layer_params, images, labels, epochs, batch_size = 128, test_images, test_labels) {
+  for (epoch_counter in seq_len(epochs)) {
+    cat("Epoch ", epoch_counter, "\n")
+    num_batches <- ceiling(nrow(images) / batch_size)
+    for(batch_counter in seq_len(num_batches)){
+      batch <- new_batch_generator(images, labels, batch_counter)
+      layer_params <- one_training_step(model, batch$images, batch$labels, layer_params)
+    }
+    predictions <- naive_model_sequential(test_images, layer_params)
+    predicted_labels <- max.col(predictions) - 1
+    matches <- predicted_labels == as.array(test_labels)
+    cat(sprintf("accuracy: %.2f\n", mean(matches)))
+  }
+  return(layer_params)
+}
+```
+
+Afterwards, the user can do the training and generate predictions like this:
+
+```R
+layer_params_learned <- fit_model(layer_params = layer_params_initial, train_images, train_labels, epochs = 1, batch_size = 128)
+
+predictions <- naive_model_sequential(test_images, layer_params_learned)
+predicted_labels <- max.col(predictions) - 1
+matches <- predicted_labels == as.array(test_labels)
+cat(sprintf("accuracy: %.2f\n", mean(matches)))
+```
+
+The _fit_model_ and the _update_weights_ functions are basically the same. The difference is in the _one_training_step_ function. The functional implementation is longer and more complicated than the object oriented one. Managing the weights outside of the model creates a problem: The model requires the weights to be in a nested structure (representing layers) while the gradient calculation expects a flattened weight structure. To solve the issue, we need to first flatten the nested weights, then update them and then nest them again.
+We cannot use the model to pass us the weights in the good format since the model itself is stateless and we want to manage the weights outside of the model.
+If we define the weights as a flat object in the beginning, we will have the hassle of creating nested weights in the _naive_model_sequential_ function so we don`t win something.
+
 #### Differences
 
-- compare model training of both
-- compare management of weights outside of layer
+| Aspect | Conclusion | Winner | 
+|----------|----------|----------|
+| Clarity of code | Functional implementation is more complicated and longer. | OO |
+| Ease of use | The only difference is that in the functional implementation the needs to make an extra step to save the weights after the _fit_model_ function and pass them to the model to generate predictions. | OO |
+| Flexibility | Same flexibility. | Tie |
+| Debugability | In the OO implementation, we can quickly extract meta data regarding the model generator from the model object: layers and weights. In the functional implementation this info is available in the current environment. | Tie |
 
 #### Conclusion
 
-- Write conclusion
+Now the clear winner is the object-oriented implementation.
+Writing the model in the object oriented way where weights are stored in the model object itself allows us to add calculations inside the model to transform the weights for an outside receiver.
+
+So altough our model code is more complicated, our model training code becomes more easy. A general phenomenon seems to emerge: Object-oriented implementations take away complexity for higher level code (like in a machine learning training loop) and hide that complexity in lower-level code because they can perform additional compuations that are being managed in the local environments.
 
 ## The complete functional implementation
 
@@ -520,7 +632,7 @@ update_weights <- function(gradients, weights) {
   return(weights)
 }
 
-fit_model <- function(images, labels, epochs, batch_size = 128, layer_params, test_images, test_labels) {
+fit_model <- function(model, layer_params, images, labels, epochs, batch_size = 128, test_images, test_labels) {
   for (epoch_counter in seq_len(epochs)) {
     cat("Epoch ", epoch_counter, "\n")
     num_batches <- ceiling(nrow(images) / batch_size)
@@ -564,6 +676,13 @@ predicted_labels <- max.col(predictions) - 1
 matches <- predicted_labels == as.array(test_labels)
 cat(sprintf("accuracy: %.2f\n", mean(matches)))
 ```
-## Further stuff to do
 
-- Understand the issue why assigning tf$variables inside a function still changes value outside
+## Final conclusion
+
+It seems that writing object-oriented code allows us to push complexity to lower-level functions.
+
+If we would implement the whole machine-learning framework by ourselves it wouldnt matter to us if we implement it the object-oriented or the functional way since we have to do the calculations somewhere - either in the basic or in the high-level functions.
+
+But fortunately we dont have to write everything! We mostly need to write high level code and we can rely on very robust and standard low level implementations. Since those low-level implementations have their local environments, they can take away some of the complexity for us in a way that a purely functional implementation cannot. The example above was a very basic one. If we would add more complexity to our model, for example by adding dropout or regularization, the object-oriented implementation would shine even more since high level code would still be easy while it would get much more complicated in the functional implementation.
+
+Taking into account that a user typically only needs to write high level functions, the overall winner for me is the object-oriented implementation. I finally learned, why it makes sense to implement machine-learning frameworks in the object-oriented way!
