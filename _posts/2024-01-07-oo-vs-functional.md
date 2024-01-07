@@ -1,6 +1,6 @@
 ---
 layout: post
-title:  "Deep Learning: Why object oriented?"
+title:  "Deep Learning: Why Object-Oriented?"
 ---
 
 ## Introduction
@@ -54,9 +54,9 @@ We save a lot of code! But we would now have to manage the weights outside of th
 
 Deep Learning models are just simple functions - chained. Everything needs to be differentiable to make backpropagation work. The essential machine-learning steps are simple functions appied one after the other. Would it help us, if we implement deep-learning in functional programming style? Would it make the code more explicit and easy to understand? Lets try it out and write an end-to-end deep learning implementation to train a model that classifies MNIST (handwritten number classification) ! I will try to keep everything low-level so we can really compare piece by piece.
 
-## The object oriented implementation
+## The object-oriented implementation
 
-Our object oriented implementation will be the following. It is largely taken from _Deep Learning with R (second edition)_ from François Chollet.
+Our object-oriented implementation will be the following. It is largely taken from _Deep Learning with R (second edition)_ from François Chollet.
 
 ```R
 library(keras)
@@ -187,7 +187,7 @@ fit_model(model, train_images, train_labels, epochs = 1, batch_size = 128, test_
 ```
 
 After ~30 Epochs it reaches an accuracy of around 90% which sounds great but is actually really bad because if we replace our simple weights update with a standard optimizer like rmsprop it would reach ~98% accuracy after 5 epochs.
-Anyway, this post is not about training the best model. It is about understanding the differences between object oriented and functional programming implementations.
+Anyway, this post is not about training the best model. It is about understanding the differences between object-oriented and functional programming implementations.
 
 We can generate predictions with:
 
@@ -212,7 +212,7 @@ In order to build the functional implementation step by step, lets look at the i
 
 ### Generator function
 
-I am starting with the generator function since this is a very easy example. I will write down the implementation and discuss the differences of the functional implementation vs the object oriented implementation.
+I am starting with the generator function since this is a very easy example. I will write down the implementation and discuss the differences of the functional implementation vs the object-oriented implementation.
 
 #### The OO-Implementation
 
@@ -532,7 +532,7 @@ matches <- predicted_labels == as.array(test_labels)
 cat(sprintf("accuracy: %.2f\n", mean(matches)))
 ```
 
-The _fit_model_ and the _update_weights_ functions are basically the same. The difference is in the _one_training_step_ function. The functional implementation is longer and more complicated than the object oriented one. Managing the weights outside of the model creates a problem: The model requires the weights to be in a nested structure (representing layers) while the gradient calculation expects a flattened weight structure. To solve the issue, we need to first flatten the nested weights, then update them and then nest them again.
+The _fit_model_ and the _update_weights_ functions are basically the same. The difference is in the _one_training_step_ function. The functional implementation is longer and more complicated than the object-oriented one. Managing the weights outside of the model creates a problem: The model requires the weights to be in a nested structure (representing layers) while the gradient calculation expects a flattened weight structure. To solve the issue, we need to first flatten the nested weights, then update them and then nest them again.
 We cannot use the model to pass us the weights in the good format since the model itself is stateless and we want to manage the weights outside of the model.
 If we define the weights as a flat object in the beginning, we will have the hassle of creating nested weights in the _naive_model_sequential_ function so we don`t win something.
 
@@ -548,7 +548,7 @@ If we define the weights as a flat object in the beginning, we will have the has
 #### Conclusion
 
 Now the clear winner is the object-oriented implementation.
-Writing the model in the object oriented way where weights are stored in the model object itself allows us to add calculations inside the model to transform the weights for an outside receiver.
+Writing the model in the object-oriented way where weights are stored in the model object itself allows us to add calculations inside the model to transform the weights for an outside receiver.
 
 So altough our model code is more complicated, our model training code becomes more easy. A general phenomenon seems to emerge: Object-oriented implementations take away complexity for higher level code (like in a machine learning training loop) and hide that complexity in lower-level code because they can perform additional compuations that are being managed in the local environments.
 
@@ -647,7 +647,7 @@ fit_model <- function(model, layer_params, images, labels, epochs, batch_size = 
 }
 ```
 
-After we load the functions above we can generate predictions with:
+After we load the functions above we can train a model to classify MNIST with the following code:
 
 ```R
 mnist <- dataset_mnist()
@@ -679,7 +679,7 @@ cat(sprintf("accuracy: %.2f\n", mean(matches)))
 
 It seems that writing object-oriented code allows us to push complexity to lower-level functions.
 
-If we would implement the whole machine-learning framework by ourselves it wouldnt matter to us if we implement it the object-oriented or the functional way since we have to do the calculations somewhere - either in the basic or in the high-level functions.
+If we were to implement an entire machine-learning framework ourselves, it might not matter whether we use an object-oriented or a functional approach since we have to do the calculations somewhere - either in the basic or in the high-level functions.
 
 But fortunately we dont have to write everything! We mostly need to write high level code and we can rely on very robust and standard low level implementations. Since those low-level implementations have their local environments, they can take away some of the complexity for us in a way that a purely functional implementation cannot. The example above was a very basic one. If we would add more complexity to our model, for example by adding dropout or regularization, the object-oriented implementation would shine even more since high level code would still be easy while it would get much more complicated in the functional implementation.
 
