@@ -7,7 +7,7 @@ title:  "Gedanken zum Thema Schlaf - Part 1"
 
 Ich schlafe nicht gut und das liegt bei mir in der Familie. Meine beiden Eltern schlafen auch nicht gut.
 
-Damit bin ich nicht alleine. Viele Leute haben Schlafprobleme. Vom Gefühl her vermutlichs ein drittel aller Deutschen.
+Damit bin ich nicht alleine. Viele Leute haben Schlafprobleme. Vom Gefühl her vermutlich ein drittel aller Deutschen.
 
 Eigentlich komisch oder? Wieso ist das so? Es scheint ein kompliziertes Thema zu sein. Gefühlt hat auch jeder ein anderes Rezept für das was hilft.
 
